@@ -55,6 +55,10 @@ func fetcherHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
 	timezone := r.URL.Query().Get("timezone")
 	format := r.URL.Query().Get("format") 
+	title := r.URL.Query().Get("title")
+	if(title ==""){
+		title = "FullStack Developer"
+	}
 	if format == "" {
 		format = "svg"
 	}
@@ -67,6 +71,7 @@ func fetcherHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
+	data.title = title
 	var buf bytes.Buffer
 		renderer := NewRenderer(&buf)
 		renderer.Render(data)

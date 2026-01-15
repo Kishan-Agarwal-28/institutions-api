@@ -133,6 +133,11 @@ func documentationHandler(w http.ResponseWriter, r *http.Request) {
                     <td><code>svg</code></td>
                     <td>Output format. Use <code>png</code> for social media sharing (LinkedIn/Twitter).</td>
                 </tr>
+                <tr>
+                    <td><code>title</code></td>
+                    <td>string (default "FullStack Developer")</td>
+                    <td>Title of the profile card.</td>
+                </tr>
             </tbody>
         </table>
 

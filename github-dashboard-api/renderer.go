@@ -28,6 +28,7 @@ const (
 // --- Types ---
 type DashboardData struct {
 	Username       string
+	title          string
 	AvatarURL      string
 	Followers      string
 	Following      string
@@ -192,7 +193,7 @@ func (r *Renderer) drawProfilePanel(x, y, w, h int, data DashboardData) {
 	r.canvas.Text(x+w/2, textY, "@"+data.Username, 
 		fmt.Sprintf("font-family:%s;font-size:20px;fill:%s;text-anchor:middle;font-weight:bold", FontFamily, ColorText))
 	
-	r.canvas.Text(x+w/2, textY+25, "Full-Stack Developer", 
+	r.canvas.Text(x+w/2, textY+25, data.title, 
 		fmt.Sprintf("font-family:%s;font-size:12px;fill:%s;text-anchor:middle;opacity:0.8", FontFamily, ColorText))
 
 	statsText := fmt.Sprintf("%s Followers · %s Following", data.Followers, data.Following)
