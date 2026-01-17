@@ -24,11 +24,13 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 	_ "modernc.org/sqlite"
 )
+
 var (
-	db *sql.DB 
+	db    *sql.DB
 	cache *lru.Cache[string, []Location]
 )
-func main(){
+
+func main() {
 	var err error
 	db, err = sql.Open("sqlite", "./locations.db")
 	if err != nil {
@@ -44,8 +46,8 @@ func main(){
 	}
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
-	r:= chi.NewRouter()
-	r.Use(middleware.Logger)	
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Heartbeat("/health"))
 	r.Use(middleware.Compress(5))
@@ -58,7 +60,7 @@ func main(){
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
 	}))
-	
+
 	r.Get("/", documentationHandler)
 	r.Get("/api/locations", searchHandler)
 
@@ -121,7 +123,7 @@ func documentationHandler(w http.ResponseWriter, r *http.Request) {
 
 		<h2>Endpoint</h2>
 		<div class="endpoint">
-			<span class="method">GET</span> /api/search
+			<span class="method">GET</span> /api/locations
 		</div>
 
 		<h3>Query Parameters</h3>
@@ -200,39 +202,43 @@ func documentationHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(apiDocsHTML))
 }
+
 type Location struct {
-    City    string `json:"city"`
-    State   string `json:"state"`
-    Country string `json:"country"`
+	City    string `json:"city"`
+	State   string `json:"state"`
+	Country string `json:"country"`
 }
+
 func searchHandler(w http.ResponseWriter, r *http.Request) {
-    var searchType, searchValue, dbColumn string
+	var searchType, searchValue, dbColumn string
 
-    if q := r.URL.Query().Get("city"); q != "" {
-        searchType = "city"
-        dbColumn = "cities.name"
-        searchValue = strings.ToLower(q)
-    } else if q := r.URL.Query().Get("state"); q != "" {
-        searchType = "state"
-        dbColumn = "states.name"
-        searchValue = strings.ToLower(q)
-    } else if q := r.URL.Query().Get("country"); q != "" {
-        searchType = "country"
-        dbColumn = "countries.name"
-        searchValue = strings.ToLower(q)
-    } else {
-        http.Error(w, "Missing search parameter (city, state, or country)", http.StatusBadRequest)
-        return
-    }
+	if q := r.URL.Query().Get("city"); q != "" {
+		searchType = "city"
+		dbColumn = "cities.name"
+		searchValue = strings.ToLower(q)
+	} else if q := r.URL.Query().Get("state"); q != "" {
+		searchType = "state"
+		dbColumn = "states.name"
+		searchValue = strings.ToLower(q)
+	} else if q := r.URL.Query().Get("country"); q != "" {
+		searchType = "country"
+		dbColumn = "countries.name"
+		searchValue = strings.ToLower(q)
+	} else {
+		http.Error(w, "Missing search parameter (city, state, or country)", http.StatusBadRequest)
+		return
+	}
 
-    cacheKey := searchType + ":" + searchValue
-    
-    if locations, found := cache.Get(cacheKey); found {
-        respondWithJSON(w, locations, "HIT")
-        return
-    }
+	cacheKey := searchType + ":" + searchValue
 
-    query := fmt.Sprintf(`
+	if cache != nil {
+		if locations, found := cache.Get(cacheKey); found {
+			respondWithJSON(w, locations, "HIT")
+			return
+		}
+	}
+
+	query := fmt.Sprintf(`
         SELECT cities.name, states.name, countries.name 
         FROM cities
         JOIN states ON cities.state_id = states.id
@@ -241,35 +247,37 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
         ORDER BY length(%s) ASC 
         LIMIT 10`, dbColumn, dbColumn)
 
-    rows, err := db.Query(query, "%"+searchValue+"%")
-    if err != nil {
-        log.Printf("DB Error: %v", err)
-        http.Error(w, "Database error", http.StatusInternalServerError)
-        return
-    }
-    defer rows.Close()
+	rows, err := db.Query(query, "%"+searchValue+"%")
+	if err != nil {
+		log.Printf("DB Error: %v", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
 
-    results := make([]Location, 0)
-    
-    for rows.Next() {
-        var loc Location
-        if err := rows.Scan(&loc.City, &loc.State, &loc.Country); err != nil {
-            log.Printf("Scan Error: %v", err)
-            continue
-        }
-        results = append(results, loc)
-    }
+	results := make([]Location, 0)
 
-    cache.Add(cacheKey, results)
-    respondWithJSON(w, results, "MISS")
+	for rows.Next() {
+		var loc Location
+		if err := rows.Scan(&loc.City, &loc.State, &loc.Country); err != nil {
+			log.Printf("Scan Error: %v", err)
+			continue
+		}
+		results = append(results, loc)
+	}
+
+	if cache != nil {
+		cache.Add(cacheKey, results)
+	}
+	respondWithJSON(w, results, "MISS")
 }
 
 func respondWithJSON(w http.ResponseWriter, data any, cacheStatus string) {
-    w.Header().Set("X-Cache", cacheStatus)
-    w.Header().Set("Cache-Control", "public, max-age=86400")
-    w.Header().Set("Content-Type", "application/json")
-    
-    if err := json.NewEncoder(w).Encode(data); err != nil {
-        log.Printf("JSON Encode Error: %v", err)
-    }
+	w.Header().Set("X-Cache", cacheStatus)
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("JSON Encode Error: %v", err)
+	}
 }

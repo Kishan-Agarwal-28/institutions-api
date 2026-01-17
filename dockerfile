@@ -47,6 +47,11 @@ COPY --from=go-builder /bin/avatars-api ./bin/
 COPY --from=go-builder /bin/locations-api ./bin/
 COPY --from=go-builder /bin/institutions-api ./bin/
 
+# Copy SQLite DB files so the services can open them at runtime
+# (Alternatively mount these as volumes in production for persistence)
+COPY locations-api/locations.db ./locations.db
+COPY institutions-api/institutions.db ./institutions.db
+
 # Copy Node App
 COPY --from=node-builder /app/calendars-api/dist ./calendars-api/dist
 COPY --from=node-builder /app/calendars-api/node_modules ./calendars-api/node_modules

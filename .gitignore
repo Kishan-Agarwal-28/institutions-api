@@ -26,3 +26,4 @@ go.work
 *.db-shm
 node_modules/
 .env
+*.sql

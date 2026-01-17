@@ -18,18 +18,18 @@ import (
 	"github.com/go-chi/httprate"
 
 	// "github.com/xuri/excelize/v2"
-		lru "github.com/hashicorp/golang-lru/v2"
+	lru "github.com/hashicorp/golang-lru/v2"
 	_ "modernc.org/sqlite"
 )
 
 type Institution struct {
 	ID    int    `json:"id"`
 	Name  string `json:"name"`
-	State string `json:"country"` 
+	State string `json:"country"`
 }
 
 var (
-	db *sql.DB
+	db    *sql.DB
 	cache *lru.Cache[string, []Institution]
 )
 
@@ -68,45 +68,43 @@ var synonyms = map[string]string{
 	"cuny":    "City University of New York",
 
 	// --- INDIA (Common Prefixes) ---
-	"iit":    "Indian Institute of Technology",
-	"nit":    "National Institute of Technology",
-	"iiit":   "Indian Institute of Information Technology",
-	"bit":    "Birla Institute of Technology",
-	"du":     "University of Delhi",
-	"jnu":    "Jawaharlal Nehru University",
-	"bhu":    "Banaras Hindu University",
-	"amu":    "Aligarh Muslim University",
-	"aiims":  "All India Institute of Medical Sciences",
-	"isi":    "Indian Statistical Institute",
-	"iisc":   "Indian Institute of Science",
-	"iim":    "Indian Institute of Management",
-	"vit":    "Vellore Institute of Technology",
-	"srm":    "SRM Institute of Science and Technology",
+	"iit":     "Indian Institute of Technology",
+	"nit":     "National Institute of Technology",
+	"iiit":    "Indian Institute of Information Technology",
+	"bit":     "Birla Institute of Technology",
+	"du":      "University of Delhi",
+	"jnu":     "Jawaharlal Nehru University",
+	"bhu":     "Banaras Hindu University",
+	"amu":     "Aligarh Muslim University",
+	"aiims":   "All India Institute of Medical Sciences",
+	"isi":     "Indian Statistical Institute",
+	"iisc":    "Indian Institute of Science",
+	"iim":     "Indian Institute of Management",
+	"vit":     "Vellore Institute of Technology",
+	"srm":     "SRM Institute of Science and Technology",
 	"manipal": "Manipal Academy of Higher Education",
-	"lpu":    "Lovely Professional University",
-	"ignou":  "Indira Gandhi National Open University",
-	
+	"lpu":     "Lovely Professional University",
+	"ignou":   "Indira Gandhi National Open University",
 
 	// --- UK & EUROPE ---
-	"lse":    "London School of Economics",
-	"ucl":    "University College London",
-	"icl":    "Imperial College London",
+	"lse":      "London School of Economics",
+	"ucl":      "University College London",
+	"icl":      "Imperial College London",
 	"oxbridge": "University of Oxford",
-	"eth":    "ETH Zurich",
-	"epfl":   "École Polytechnique Fédérale de Lausanne",
-	"tum":    "Technical University of Munich",
+	"eth":      "ETH Zurich",
+	"epfl":     "École Polytechnique Fédérale de Lausanne",
+	"tum":      "Technical University of Munich",
 
 	// --- ASIA / OCEANIA ---
-	"nus":    "National University of Singapore",
-	"ntu":    "Nanyang Technological University",
-	"hku":    "University of Hong Kong",
-	"hkust":  "Hong Kong University of Science and Technology",
-	"anu":    "Australian National University",
-	"unsw":   "University of New South Wales",
-	"kaist":  "Korea Advanced Institute of Science and Technology",
-	"snu":    "Seoul National University",
+	"nus":   "National University of Singapore",
+	"ntu":   "Nanyang Technological University",
+	"hku":   "University of Hong Kong",
+	"hkust": "Hong Kong University of Science and Technology",
+	"anu":   "Australian National University",
+	"unsw":  "University of New South Wales",
+	"kaist": "Korea Advanced Institute of Science and Technology",
+	"snu":   "Seoul National University",
 }
-
 
 func main() {
 	var err error
@@ -120,7 +118,13 @@ func main() {
 	}
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
-	
+
+	// Initialize in-memory LRU cache for institutions
+	cache, err = lru.New[string, []Institution](1000)
+	if err != nil {
+		log.Fatalf("Failed to create cache: %v", err)
+	}
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -135,7 +139,7 @@ func main() {
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
 	}))
-	
+
 	r.Get("/", documentationHandler)
 	r.Get("/api/institutions", searchHandler)
 
@@ -147,14 +151,14 @@ func main() {
 	http.ListenAndServe(":"+port, r)
 }
 func sanitizeQuery(input string) string {
-		clean := strings.Map(func(r rune) rune {
-				if unicode.IsGraphic(r) {
-						return r
-				}
-				return -1
-		}, input)
-		clean = strings.ReplaceAll(clean, "\"", "\"\"")
-		return strings.TrimSpace(clean)
+	clean := strings.Map(func(r rune) rune {
+		if unicode.IsGraphic(r) {
+			return r
+		}
+		return -1
+	}, input)
+	clean = strings.ReplaceAll(clean, "\"", "\"\"")
+	return strings.TrimSpace(clean)
 }
 func expandQuery(input string) string {
 	lower := strings.ToLower(input)
@@ -164,18 +168,20 @@ func expandQuery(input string) string {
 	return fmt.Sprintf("\"%s\"", input)
 }
 func searchHandler(w http.ResponseWriter, r *http.Request) {
-	
+
 	query := r.URL.Query().Get("name")
 	limitStr := r.URL.Query().Get("limit")
 	cacheKey := fmt.Sprintf("institutions:%s:limit:%s", strings.ToLower(query), limitStr)
 
-    if institutions, found := cache.Get(cacheKey); found {
-        w.Header().Set("X-Cache", "HIT")
-        w.Header().Set("Cache-Control", "public, max-age=3600")
-        w.Header().Set("Content-Type", "application/json")
-        json.NewEncoder(w).Encode(institutions)
-        return
-    }
+	if cache != nil {
+		if institutions, found := cache.Get(cacheKey); found {
+			w.Header().Set("X-Cache", "HIT")
+			w.Header().Set("Cache-Control", "public, max-age=3600")
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(institutions)
+			return
+		}
+	}
 	if limitStr == "" {
 		limitStr = "20"
 	}
@@ -236,14 +242,16 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	if results == nil {
 		results = []Institution{}
 	}
-	cache.Add(cacheKey, results)
+	if cache != nil {
+		cache.Add(cacheKey, results)
+	}
 
-    w.Header().Set("X-Cache", "MISS")
-    w.Header().Set("Cache-Control", "public, max-age=3600")
+	w.Header().Set("X-Cache", "MISS")
+	w.Header().Set("Cache-Control", "public, max-age=3600")
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(results)
 }
-func documentationHandler(w http.ResponseWriter, r *http.Request){
+func documentationHandler(w http.ResponseWriter, r *http.Request) {
 	const apiDocsHTML = `
 		<!DOCTYPE html>
 		<html lang="en">

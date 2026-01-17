@@ -1434,13 +1434,15 @@ func generateAvatarHandler(w http.ResponseWriter, r *http.Request) {
 
 	cacheKey := fmt.Sprintf("%s:%s:%s:%s", name, avatarType, size, color)
 
-	if cachedSVG, found := cache.Get(cacheKey); found {
-		w.Header().Set("X-Cache", "HIT")
-		w.Header().Set("Cache-Control", "public, max-age=86400")
-		w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(cachedSVG))
-		return
+	if cache != nil {
+		if cachedSVG, found := cache.Get(cacheKey); found {
+			w.Header().Set("X-Cache", "HIT")
+			w.Header().Set("Cache-Control", "public, max-age=86400")
+			w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(cachedSVG))
+			return
+		}
 	}
 
 	var avatarContent string
@@ -1500,7 +1502,9 @@ func generateAvatarHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store in cache
-	cache.Add(cacheKey, avatarContent)
+	if cache != nil {
+		cache.Add(cacheKey, avatarContent)
+	}
 
 	w.Header().Set("X-Cache", "MISS")
 	w.Header().Set("Cache-Control", "public, max-age=86400")
