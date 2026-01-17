@@ -5,6 +5,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"html"
 	"log"
 	"math"
 	"net/http"
@@ -248,11 +249,11 @@ func documentationHandler(w http.ResponseWriter, r *http.Request) {
 			<h2>🚀 Quick Start</h2>
 			<h3>Base URL</h3>
 			<div class="endpoint">
-				<span class="method">GET</span> /api/generate-avatar
+				<span class="method">GET</span> /avatars/api/generate-avatar
 			</div>
 
 			<h3>Example Request</h3>
-			<pre><code>GET /api/generate-avatar?name=John%20Doe&type=avatar&size=200</code></pre>
+			<pre><code>GET /avatars/api/generate-avatar?name=John%20Doe&type=avatar&size=200</code></pre>
 
 			<h3>Parameters</h3>
 			<table>
@@ -304,112 +305,112 @@ func documentationHandler(w http.ResponseWriter, r *http.Request) {
 			
 			<div class="avatar-grid">
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=avatar&size=150" alt="Avatar">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=avatar&size=150" alt="Avatar">
 					<h4>avatar</h4>
 					<p>Classic circular avatar with initials</p>
 					<code>type=avatar</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=gravatar&size=150" alt="Gravatar">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=gravatar&size=150" alt="Gravatar">
 					<h4>gravatar</h4>
 					<p>GitHub-style identicon</p>
 					<code>type=gravatar</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=dither&size=150" alt="Dither">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=dither&size=150" alt="Dither">
 					<h4>dither</h4>
 					<p>Retro dithered plasma effect</p>
 					<code>type=dither</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=ascii&size=150" alt="ASCII">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=ascii&size=150" alt="ASCII">
 					<h4>ascii</h4>
 					<p>Procedural ASCII robot</p>
 					<code>type=ascii</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=dotmatrix&size=150" alt="Dot Matrix">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=dotmatrix&size=150" alt="Dot Matrix">
 					<h4>dotmatrix</h4>
 					<p>LED dot matrix display</p>
 					<code>type=dotmatrix</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=terminal&size=150" alt="Terminal">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=terminal&size=150" alt="Terminal">
 					<h4>terminal</h4>
 					<p>Retro terminal block text</p>
 					<code>type=terminal</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=bauhaus&size=150" alt="Bauhaus">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=bauhaus&size=150" alt="Bauhaus">
 					<h4>bauhaus</h4>
 					<p>Geometric Bauhaus design</p>
 					<code>type=bauhaus</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=ring&size=150" alt="Ring">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=ring&size=150" alt="Ring">
 					<h4>ring</h4>
 					<p>Gradient ring pattern</p>
 					<code>type=ring</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=beam&size=150" alt="Beam">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=beam&size=150" alt="Beam">
 					<h4>beam</h4>
 					<p>Connected network nodes</p>
 					<code>type=beam</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=marble&size=150" alt="Marble">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=marble&size=150" alt="Marble">
 					<h4>marble</h4>
 					<p>Marble texture effect</p>
 					<code>type=marble</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=glitch&size=150" alt="Glitch">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=glitch&size=150" alt="Glitch">
 					<h4>glitch</h4>
 					<p>Cyberpunk glitch effect</p>
 					<code>type=glitch</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=sunset&size=150" alt="Sunset">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=sunset&size=150" alt="Sunset">
 					<h4>sunset</h4>
 					<p>Procedural sunset scene</p>
 					<code>type=sunset</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=smile&size=150" alt="Smile">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=smile&size=150" alt="Smile">
 					<h4>smile</h4>
 					<p>Minimalist face with expressions</p>
 					<code>type=smile</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=circuit&size=150" alt="Circuit">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=circuit&size=150" alt="Circuit">
 					<h4>circuit</h4>
 					<p>Circuit board pattern</p>
 					<code>type=circuit</code>
 				</div>
 
 				<div class="avatar-card">
-					<img src="/api/generate-avatar?name=Alex%20Morgan&type=pixel&size=150" alt="Pixel">
+					<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=pixel&size=150" alt="Pixel">
 					<h4>pixel</h4>
 					<p>Isometric pixel art cube</p>
 					<code>type=pixel</code>
 				</div>
 
 			<div class="avatar-card">
-				<img src="/api/generate-avatar?name=Alex%20Morgan&type=constellation&size=150" alt="Constellation">
+				<img src="/avatars/api/generate-avatar?name=Alex%20Morgan&type=constellation&size=150" alt="Constellation">
 				<h4>constellation</h4>
 				<p>Real constellation star maps</p>
 				<code>type=constellation</code>
@@ -421,16 +422,16 @@ func documentationHandler(w http.ResponseWriter, r *http.Request) {
 	<h2>💡 Usage Examples</h2>
 	
 	<h3>HTML Image Tag</h3>
-	<pre><code>&lt;img src="/api/generate-avatar?name=Jane%20Smith&type=avatar&size=100" alt="Avatar"&gt;</code></pre>
+	<pre><code>&lt;img src="/avatars/api/generate-avatar?name=Jane%20Smith&type=avatar&size=100" alt="Avatar"&gt;</code></pre>
 
 	<h3>With Custom Color</h3>
-	<pre><code>&lt;img src="/api/generate-avatar?name=John&type=gravatar&color=%23FF5733" alt="Avatar"&gt;</code></pre>
+	<pre><code>&lt;img src="/avatars/api/generate-avatar?name=John&type=gravatar&color=%23FF5733" alt="Avatar"&gt;</code></pre>
 
 	<h3>Large Size</h3>
-	<pre><code>&lt;img src="/api/generate-avatar?name=Sarah&type=dotmatrix&size=500" alt="Avatar"&gt;</code></pre>
+	<pre><code>&lt;img src="/avatars/api/generate-avatar?name=Sarah&type=dotmatrix&size=500" alt="Avatar"&gt;</code></pre>
 
 	<h3>JavaScript Fetch</h3>
-	<pre><code>fetch('/api/generate-avatar?name=Bob%20Johnson&type=beam')
+	<pre><code>fetch('/avatars/api/generate-avatar?name=Bob%20Johnson&type=beam')
   .then(response => response.text())
   .then(svg => {
     document.getElementById('avatar').innerHTML = svg;
@@ -738,6 +739,8 @@ func generateAsciiRobot(name string, size string) string {
 
 	for _, line := range asciiArt {
 		safeLine := strings.ReplaceAll(line, " ", "\u00A0")
+		// Escape any characters that would break XML (e.g., '<', '>' or '&')
+		safeLine = html.EscapeString(safeLine)
 
 		fmt.Fprintf(&textBlock, `<tspan x="50%%" dy="%d" text-anchor="middle">%s</tspan>`,
 			lineHeight, safeLine)
