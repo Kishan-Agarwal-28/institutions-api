@@ -8,6 +8,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings" // Added for the path builder
 
 	svg "github.com/ajstarks/svgo"
 )
@@ -38,13 +39,19 @@ func DrawDitheredAvatar(s *svg.SVG, startX, startY, displayWidth, displayHeight 
 
 	// 2. Setup
 	rPrim, gPrim, bPrim := parseHexColor(cfg.PrimaryColor)
-	fillStr := fmt.Sprintf("fill:rgb(%d,%d,%d)", rPrim, gPrim, bPrim)
+	// shape-rendering: crispEdges ensures the vector pixels don't blur when zoomed
+	styleStr := fmt.Sprintf("fill:rgb(%d,%d,%d);", rPrim, gPrim, bPrim)
 	
 	srcW, srcH := float64(srcImg.Bounds().Dx()), float64(srcImg.Bounds().Dy())
 	
 	s.Gtransform(fmt.Sprintf("translate(%d, %d)", startX, startY))
 
-	// 3. Loop Rows
+	// 3. Prepare the Path Builder
+	var pathBuilder strings.Builder
+	// Pre-allocate memory to handle the large string efficiently
+	pathBuilder.Grow((displayWidth * displayHeight) / 2 * 16)
+
+	// 4. Loop Rows
 	for y := 0; y < displayHeight; y += cfg.GridSize {
 		
 		// RLE: Track the current run of "active" pixels
@@ -71,7 +78,7 @@ func DrawDitheredAvatar(s *svg.SVG, startX, startY, displayWidth, displayHeight 
 
 			isActive := lum >= threshold
 
-			// --- RLE Logic ---
+			// --- RLE to Path Logic ---
 			if isActive {
 				if runStart == -1 {
 					runStart = x // Start new run
@@ -79,23 +86,27 @@ func DrawDitheredAvatar(s *svg.SVG, startX, startY, displayWidth, displayHeight 
 				// If already in a run, just continue loop
 			} else {
 				if runStart != -1 {
-					// End of run, draw the accumulated rect
+					// End of run, append the rectangle instructions to the path
 					width := x - runStart
-					s.Rect(runStart, y, width, cfg.GridSize, fillStr)
+					fmt.Fprintf(&pathBuilder, "M%d %dh%dv%dh-%dZ", runStart, y, width, cfg.GridSize, width)
 					runStart = -1 // Reset
 				}
 			}
 		}
-		// End of row: if a run was active, draw it
+		// End of row: if a run was active, append it
 		if runStart != -1 {
 			width := displayWidth - runStart
-			s.Rect(runStart, y, width, cfg.GridSize, fillStr)
+			fmt.Fprintf(&pathBuilder, "M%d %dh%dv%dh-%dZ", runStart, y, width, cfg.GridSize, width)
 		}
 	}
+	
+	// 5. Draw the single massive path
+	s.Path(pathBuilder.String(), styleStr)
+	
 	s.Gend()
 }
 
-// ... (Helpers: clamp, parseHexColor same as before) ...
+// ... (Helpers: clamp, parseHexColor) ...
 func clamp(val, min, max float64) float64 {
 	if val < min { return min }
 	if val > max { return max }
